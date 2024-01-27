@@ -1,16 +1,19 @@
-from chess import Board, Move, WHITE
+from chess import Board, Move, WHITE, BLACK
 from stockfish import Stockfish
 
 
 class Evaluator:
-    _engine = Stockfish(path="/stockfish/stockfish-windows-x86-64-modern.exe", parameters={"Threads": 4, "Hash": 2048})
-    _engine.set_depth(20)
+    _engine = Stockfish(
+        path="/stockfish/stockfish-windows-x86-64-modern.exe",
+        depth=18,
+        parameters={"Threads": 4, "Hash": 2048},
+    )
 
     @classmethod
     def find_great_move(
             cls,
             board: Board,
-            cp_diff: int = 200,
+            cp_diff: int = 150,
             mate_moves_diff: int = 3
     ) -> Move | None:
         """
@@ -35,15 +38,27 @@ class Evaluator:
         # {'Move': 'f5h7', 'Centipawn': None, 'Mate': 1},
         # {'Move': 'f5d7', 'Centipawn': 713, 'Mate': None},
 
-        # abs() is used to ignore which side is it to move
-        if first_move["Mate"]:
+        if first_move["Mate"] is not None:
+            # If the color to move will be mated, there is no great move.
+            if first_move["Mate"] > 0 and board.turn == BLACK:
+                return None
+            elif first_move["Mate"] < 0 and board.turn == WHITE:
+                return None
+
+            # abs() is used to ignore which side is it to move
             if second_move["Mate"]:
                 if abs(second_move["Mate"] - first_move["Mate"]) >= mate_moves_diff:
                     return Move.from_uci(first_move["Move"])
             else:
                 return Move.from_uci(first_move["Move"])
         else:
-            if second_move["Centipawn"]:
+            # If the color to move is losing, there is no great move.
+            if first_move["Centipawn"] >= 300 and board.turn == BLACK:
+                return None
+            elif first_move["Centipawn"] <= -300 and board.turn == WHITE:
+                return None
+
+            if second_move["Centipawn"] is not None:
                 if abs(first_move["Centipawn"] - second_move["Centipawn"]) >= cp_diff:
                     return Move.from_uci(first_move["Move"])
             else:

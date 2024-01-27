@@ -53,8 +53,9 @@ class PuzzleFinder:
         _board = _board.copy()
         _puzzle = Puzzle.create_only_pgn(_board.fen())
         while True:
-            if _board.is_repetition():
-                # If the position is drawn by threefold repetition, stop building puzzle
+            if _board.is_repetition() or _board.can_claim_draw():
+                # If the position is drawn
+                # stop building puzzle
                 break
 
             winner_move = Evaluator.find_great_move(_board)

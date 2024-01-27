@@ -1,4 +1,48 @@
+import chess
 from chess import Move, Board, BLACK
+
+
+def piece_letter(piece: chess.PieceType | None) -> str:
+    if piece == chess.PAWN:
+        return ""
+    elif piece == chess.KNIGHT:
+        return "N"
+    elif piece == chess.BISHOP:
+        return "B"
+    elif piece == chess.ROOK:
+        return "R"
+    elif piece == chess.QUEEN:
+        return "Q"
+    elif piece == chess.KING:
+        return "K"
+
+    raise ValueError(f"{piece} is not a piece")
+
+
+def move_representation(board: Board, move: Move) -> str:
+    """
+    Creates a representation of a given move on a board
+    :param board: Position with the move
+    :param move: Move to represent
+    :return: String of a move containing piece name
+    """
+    if board.is_checkmate():
+        return "MATE"
+
+    moved_piece = board.piece_type_at(move.from_square)
+    letter = piece_letter(moved_piece)
+    if board.is_capture(move):
+        _move = letter + move.uci()[:2] + "x" + move.uci()[2:4]
+    else:
+        _move = letter + move.uci()[:2] + "-" + move.uci()[2:4]
+
+    if move.promotion:
+        _move += "=" + piece_letter(move.promotion)
+
+    if board.gives_check(move):
+        _move += "+"
+
+    return _move
 
 
 class PuzzleMove:
@@ -20,10 +64,12 @@ class Puzzle:
 
     def print(self):
         """
-        Print in stdout formatted puzzle.
+        Print in stdout formatted puzzle. If there is no moves in puzzle, nothing will happen.
 
         :return: None
         """
+        if not self.moves:
+            return None
         board = Board(self.fen)
         print(board)
         print(self.fen)
@@ -31,19 +77,31 @@ class Puzzle:
         first_move: PuzzleMove = moves[0]
 
         if board.turn == BLACK:
-            print(f"1... {first_move.winner_move.uci()}")
+            print(f"1... {move_representation(board, first_move.winner_move)}")
+            board.push(first_move.winner_move)
             move_idx = 2
             for i, move in enumerate(moves):
+                l_move = move.loser_move
+                move_str = f"{move_idx}. {move_representation(board, l_move)} "
+                board.push(l_move)
+
                 if i + 1 < len(moves):
-                    winner_move = moves[i + 1].winner_move.uci()
-                else:
-                    winner_move = ""
-                print(f"{move_idx}. {move.loser_move.uci()} {winner_move}")
+                    w_move = moves[i + 1].winner_move
+                    move_str += move_representation(board, w_move)
+                    board.push(w_move)
+                print(move_str)
                 move_idx += 1
         else:
             move_idx = 1
-            for move in self.moves:
-                print(f"{move_idx}. {move.winner_move.uci()} {move.loser_move.uci()}")
+            for move in moves:
+                w_move = move.winner_move
+                move_str = f"{move_idx}. {move_representation(board, w_move)} "
+                board.push(w_move)
+
+                l_move = move.loser_move
+                move_str += move_representation(board, l_move)
+                board.push(l_move)
+                print(move_str)
                 move_idx += 1
 
     def add_move(self, move: PuzzleMove):
