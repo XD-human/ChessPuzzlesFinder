@@ -2,6 +2,16 @@ import chess
 from chess import Move, Board, BLACK
 
 
+def check_sign(board: Board, move: Move) -> str:
+    _board = board.copy()
+    _board.push(move)
+    if _board.is_checkmate():
+        return "#"
+    elif _board.is_check():
+        return "+"
+    return ""
+
+
 def piece_letter(piece: chess.PieceType | None) -> str:
     if piece == chess.PAWN:
         return ""
@@ -29,18 +39,22 @@ def move_representation(board: Board, move: Move) -> str:
     if board.is_checkmate():
         return "MATE"
 
-    moved_piece = board.piece_type_at(move.from_square)
-    letter = piece_letter(moved_piece)
-    if board.is_capture(move):
-        _move = letter + move.uci()[:2] + "x" + move.uci()[2:4]
+    if board.is_kingside_castling(move):
+        _move = "O-O"
+    elif board.is_queenside_castling(move):
+        _move = "O-O-O"
     else:
-        _move = letter + move.uci()[:2] + "-" + move.uci()[2:4]
+        moved_piece = board.piece_type_at(move.from_square)
+        letter = piece_letter(moved_piece)
+        if board.is_capture(move):
+            _move = letter + move.uci()[:2] + "x" + move.uci()[2:4]
+        else:
+            _move = letter + move.uci()[:2] + "-" + move.uci()[2:4]
 
-    if move.promotion:
-        _move += "=" + piece_letter(move.promotion)
+        if move.promotion:
+            _move += "=" + piece_letter(move.promotion)
 
-    if board.gives_check(move):
-        _move += "+"
+    _move += check_sign(board, move)
 
     return _move
 

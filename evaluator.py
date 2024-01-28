@@ -40,9 +40,7 @@ class Evaluator:
 
         if first_move["Mate"] is not None:
             # If the color to move will be mated, there is no great move.
-            if first_move["Mate"] > 0 and board.turn == BLACK:
-                return None
-            elif first_move["Mate"] < 0 and board.turn == WHITE:
+            if Evaluator.eval_for_moving_color(board, first_move["Mate"]) < 0:
                 return None
 
             # abs() is used to ignore which side is it to move
@@ -53,9 +51,7 @@ class Evaluator:
                 return Move.from_uci(first_move["Move"])
         else:
             # If the color to move is losing, there is no great move.
-            if first_move["Centipawn"] >= 300 and board.turn == BLACK:
-                return None
-            elif first_move["Centipawn"] <= -300 and board.turn == WHITE:
+            if Evaluator.eval_for_moving_color(board, first_move["Centipawn"]) < -300:
                 return None
 
             if second_move["Centipawn"] is not None:
@@ -81,6 +77,14 @@ class Evaluator:
 
     @staticmethod
     def eval_for_moving_color(board: Board, evaluation: int) -> int:
+        """
+        Evaluate the position for the color to move
+
+        :param board: Board instance with the evaluated position
+        :param evaluation: Amount of moves to mate or centipawns
+        :return: Evaluation for the moving color
+        (positive evaluation means that the moving color is better, otherwise it's worse)
+        """
         if board.turn == WHITE:
             return evaluation
         else:
